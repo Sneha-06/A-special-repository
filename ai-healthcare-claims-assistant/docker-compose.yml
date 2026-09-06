@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ahca-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ahca
+      POSTGRES_PASSWORD: ahca_demo
+      POSTGRES_DB: ahca
+    ports:
+      - "5433:5432"
+    volumes:
+      - ahca_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ahca_pgdata:
