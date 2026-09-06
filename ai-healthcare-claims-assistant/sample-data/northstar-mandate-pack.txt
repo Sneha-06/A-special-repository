@@ -1,0 +1,20 @@
+NORTHSTAR PBM SYNTHETIC MANDATE PACK
+Effective 2025-01-01
+DEMO DOCUMENT — synthetic healthcare content only. Do not use as a real benefit policy.
+
+1. Rule MR-204 — Eligibility Verification for Specialty Pharmacy Services
+Eligibility condition: Member must be active on an eligible commercial or exchange plan on the date of service.
+Authorization: Prior authorization is not required for standard specialty fills under MR-204.
+Coverage is denied when eligibility cannot be verified or the member is termed.
+
+2. Rule MR-305 — Specialty Authorization and Eligibility Combined
+Eligibility condition: Member must be active AND the requested NDC must appear on the specialty formulary.
+Authorization: Prior authorization is required before the first fill.
+Service restriction: Limited to in-network specialty pharmacies.
+
+3. Important changes in 2025
+- MR-204 no longer requires PA for maintenance specialty drugs.
+- MR-305 raised the PA lookback window to 12 months.
+- MR-410 adds quantity-limit edits for high-cost injectables.
+
+Upload this file in Document Analyzer to exercise extraction, chunking, and RAG indexing.
