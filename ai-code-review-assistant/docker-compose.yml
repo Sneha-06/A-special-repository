@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: acra-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: acra
+      POSTGRES_PASSWORD: acra_demo
+      POSTGRES_DB: acra
+    ports:
+      - "5435:5432"
+    volumes:
+      - acra_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acra -d acra"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: acra-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4002
+      NODE_ENV: production
+      DATABASE_URL: postgresql://acra:acra_demo@postgres:5432/acra?schema=public
+      CORS_ORIGIN: http://localhost:5175
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    ports:
+      - "4002:4002"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: acra-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5175:80"
+
+volumes:
+  acra_pgdata:

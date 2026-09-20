@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: atcg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atcg
+      POSTGRES_PASSWORD: atcg_demo
+      POSTGRES_DB: atcg
+    ports:
+      - "5434:5432"
+    volumes:
+      - atcg_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atcg -d atcg"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: atcg-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://atcg:atcg_demo@postgres:5432/atcg?schema=public
+      CORS_ORIGIN: http://localhost:5174
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    ports:
+      - "4001:4001"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: atcg-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5174:80"
+
+volumes:
+  atcg_pgdata:
