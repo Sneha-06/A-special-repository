@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.vite/
+backend/node_modules/
+frontend/node_modules/
+backend/dist/
+frontend/dist/

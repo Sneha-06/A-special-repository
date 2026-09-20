@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../backend/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum RequirementPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SourceType {
+  USER_STORY
+  BUSINESS_RULE
+  REGULATION
+  FUNCTIONAL_SPEC
+  BRD
+}
+
+enum TestCategory {
+  FUNCTIONAL
+  POSITIVE
+  NEGATIVE
+  BOUNDARY
+  EDGE_CASE
+  REGRESSION
+  SECURITY
+  ACCESSIBILITY
+  API
+  PERFORMANCE
+  INTEGRATION
+  SMOKE
+}
+
+enum TestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TestSeverity {
+  MINOR
+  MODERATE
+  MAJOR
+  CRITICAL
+}
+
+enum GenerationType {
+  REQUIREMENT_ANALYSIS
+  ACCEPTANCE_CRITERIA
+  TEST_CASES
+  SYNTHETIC_TEST_DATA
+  AUTOMATION_CODE
+  COVERAGE_ANALYSIS
+}
+
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  projects     Project[]
+
+  @@index([email])
+}
+
+model Project {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  status       ProjectStatus @default(ACTIVE)
+  createdBy    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  creator      User          @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  requirements Requirement[]
+
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+}
+
+model Requirement {
+  id                     String               @id @default(uuid())
+  projectId              String
+  title                  String
+  description            String
+  userStory              String?
+  applicationModule      String?
+  acceptanceCriteriaText String?
+  additionalContext      String?
+  priority               RequirementPriority  @default(MEDIUM)
+  sourceType             SourceType           @default(USER_STORY)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  project            Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  analyses           RequirementAnalysis[]
+  acceptanceCriteria AcceptanceCriteria[]
+  syntheticTestData  SyntheticTestData[]
+  testCases          TestCase[]
+  generationHistory  GenerationHistory[]
+
+  @@index([projectId])
+  @@index([priority])
+  @@index([sourceType])
+  @@index([createdAt])
+}
+
+model RequirementAnalysis {
+  id                        String      @id @default(uuid())
+  requirementId             String
+  summary                   String
+  actors                    Json
+  preconditions             Json
+  businessRules             Json
+  functionalRequirements    Json
+  nonFunctionalRequirements Json
+  assumptions               Json
+  ambiguities               Json
+  missingInformation        Json
+  riskAreas                 Json
+  createdAt                 DateTime    @default(now())
+  requirement               Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId])
+  @@index([createdAt])
+}
+
+model AcceptanceCriteria {
+  id            String      @id @default(uuid())
+  requirementId String
+  criteriaKey   String?
+  given         String
+  when          String
+  then          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId])
+  @@index([criteriaKey])
+}
+
+model SyntheticTestData {
+  id            String      @id @default(uuid())
+  requirementId String
+  field         String
+  value         String
+  dataType      String
+  purpose       String
+  createdAt     DateTime    @default(now())
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId])
+  @@index([purpose])
+  @@index([field])
+}
+
+model TestCase {
+  id                  String       @id @default(uuid())
+  requirementId       String
+  testCaseId          String       @unique
+  title               String
+  category            TestCategory
+  priority            TestPriority @default(MEDIUM)
+  severity            TestSeverity @default(MODERATE)
+  preconditions       String
+  expectedResult      String
+  postconditions      String?
+  automationCandidate Boolean      @default(false)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  requirement         Requirement  @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  steps               TestStep[]
+  testData            TestData[]
+  automationCode      AutomationCode[]
+
+  @@index([requirementId])
+  @@index([category])
+  @@index([priority])
+  @@index([automationCandidate])
+}
+
+model TestStep {
+  id             String   @id @default(uuid())
+  testCaseId     String
+  stepNumber     Int
+  action         String
+  testData       String?
+  expectedResult String
+  testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testCaseId, stepNumber])
+  @@index([testCaseId])
+}
+
+model TestData {
+  id         String   @id @default(uuid())
+  testCaseId String
+  field      String
+  value      String
+  dataType   String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([testCaseId])
+  @@index([field])
+}
+
+model AutomationCode {
+  id         String   @id @default(uuid())
+  testCaseId String
+  framework  String
+  language   String
+  code       String
+  createdAt  DateTime @default(now())
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([testCaseId])
+  @@index([framework])
+}
+
+model GenerationHistory {
+  id             String           @id @default(uuid())
+  requirementId  String
+  generationType GenerationType
+  model          String
+  status         GenerationStatus @default(COMPLETED)
+  input          Json
+  output         Json
+  createdAt      DateTime         @default(now())
+  requirement    Requirement      @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId])
+  @@index([generationType])
+  @@index([status])
+  @@index([createdAt])
+}
